@@ -1,0 +1,14 @@
+I. Configurar el proyecto:
+
+1. Configurar la ruta de juli en 
+        Build Path-> Configure Build Path -> Libraries -> tomcat-juli.jar -> edit       
+        establecer como path de la librería juli la carpeta bin dentro de la carpeta del tomcat
+2. Configurar la jre instalada
+3. Crear el servidor local de tomcat 9
+4. En los facets del proyecto direccionar al tomcat del punto anterior
+ 
+   (El proyecto funciona con apache 8 y Java 7 )
+   
+ II. Cómo ejecutar el proyecto:
+ 
+ 1. Arrancar aplicación sobre servidor (tomcat)       

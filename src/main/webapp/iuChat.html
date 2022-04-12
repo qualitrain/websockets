@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one or more
+  contributor license agreements.  See the NOTICE file distributed with
+  this work for additional information regarding copyright ownership.
+  The ASF licenses this file to You under the Apache License, Version 2.0
+  (the "License"); you may not use this file except in compliance with
+  the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+-->
+<html>
+<head>
+	<meta charset="ISO-8859-1">
+	<title>Ejemplos de Apache Tomcat WebSocket: Chat</title>
+	    <style>
+        input#cajaMensaje {
+            width: 410px
+        }
+
+        #contenedorPantalla {
+            width: 400px;
+        }
+
+        #pantallaChat {
+            border: 1px solid #CCCCCC;
+            border-right-color: #999999;
+            border-bottom-color: #999999;
+            height: 170px;
+            overflow-y: scroll;
+            padding: 5px;
+            width: 100%;
+        }
+
+        #pantallaChat p {
+            padding: 0;
+            margin: 0;
+        }
+    </style>
+	<script type="text/javascript">
+    var chat = {};
+    chat.socket = null;
+    
+    var pantallaChat;
+
+    function hayWebSocket(){
+    	
+        if ('WebSocket' in window)
+            return true;
+        if ('MozWebSocket' in window) 
+        	return true;
+
+        return false;
+    }
+    
+    function getHost(){
+    	var dirChat = null;
+        if (window.location.protocol == 'http:')
+        	dirChat = 'ws://' + window.location.host +'/ChatWebSocket/websocket/chat';
+        else
+        	dirChat = 'wss://' + window.location.host + '/ChatWebSocket/websocket/chat';
+    	console.log("URI dirChat =" + dirChat);
+    	return dirChat;
+    }
+    
+    function crearWebSocket(host){
+    	var miSocket = null;
+        if ('WebSocket' in window)
+        	miSocket = new WebSocket(host);
+        else
+        if ('MozWebSocket' in window) 
+        	miSocket = new MozWebSocket(host);
+        if(miSocket.readyState != miSocket.CLOSED)
+			return miSocket;
+        console.log(miSocket);
+        return null;
+    }
+    
+    chat.reportar = function(texto){
+        pantallaChat.escribir(texto);
+    }
+    
+    chat.configurarCajaMensaje = function(){
+        document.getElementById('cajaMensaje').onkeydown = function(event) {
+            if (event.keyCode == 13) {
+                chat.enviarMensaje();
+            }
+        };
+    	
+    }
+    
+    chat.terminarChat = function(){
+        document.getElementById('cajaMensaje').onkeydown = null;
+   		chat.reportar('Info: Se ha cerrado la conexión WebSocket.');
+    }
+    
+    chat.atenderMensajeServer = function(mensajeServer){
+        pantallaChat.escribir(mensajeServer.data);    	
+    }
+
+    chat.configurarSocket = function() {
+    	if(hayWebSocket() == false){
+        	chat.reportar('Error: WebSocket no está soportado por este navegador.');
+            return;    		   		
+    	}
+    	var host = getHost();
+    	chat.socket = crearWebSocket(host);
+    	if(chat.socket == null){
+        	chat.reportar('Error: No fue posible conectarse a ' + host );
+            return;    		
+    	}
+
+        chat.socket.onopen = function () {
+        	chat.reportar('Info: Se abrió una conexión WebSocket.');
+        	chat.configurarCajaMensaje();
+        };
+
+        chat.socket.onclose = function () {
+        	chat.terminarChat();
+        };
+
+        chat.socket.onmessage = function (mensaje) {
+        	chat.atenderMensajeServer(mensaje);
+        };
+    }
+
+    chat.iniciar = function() {
+        chat.configurarSocket();
+    }
+
+    chat.enviarMensaje = function() {
+        var textoMensaje = document.getElementById('cajaMensaje').value;
+        if (textoMensaje != '') {
+            chat.socket.send(textoMensaje);
+            document.getElementById('cajaMensaje').value = '';
+        }
+    }
+
+
+
+    window.onload = function(){
+        pantallaChat = document.getElementById('pantallaChat');
+        
+        pantallaChat.escribir = function(textoMensaje) {
+            var p = document.createElement('p');
+            p.style.wordWrap = 'break-word';
+            p.innerHTML = textoMensaje;
+            pantallaChat.appendChild(p);
+            while (pantallaChat.childNodes.length > 25) {
+                pantallaChat.removeChild(pantallaChat.firstChild);
+            }
+            pantallaChat.scrollTop = pantallaChat.scrollHeight;
+        }
+        
+        chat.iniciar();
+    }
+
+	</script>
+</head>
+<body>
+	<div>
+       <p>
+          <input type="text" placeholder="teclee su mensaje y presione enter para participar en el chat" id="cajaMensaje" />
+       </p>
+       <div id="contenedorPantalla">
+           <div id="pantallaChat"></div>
+       </div>
+    </div>
+
+</body>
+</html>
